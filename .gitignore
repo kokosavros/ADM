@@ -1,0 +1,5 @@
+ass1/
+results/
+.DS_Store
+src/.DS_Store
+*.pyc
