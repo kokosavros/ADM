@@ -33,7 +33,6 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
-utility = np.full((users, movies), np.nan)
 
 # Split data into 5 train and test folds
 folds = 5
