@@ -4,6 +4,7 @@ import os
 from classes.estimator import Estimator
 from classes.recommender import Recommender
 
+
 # Parse the arguments
 choices = ['naive-global']
 estimator_choices = ['rmse', 'mae']
@@ -30,6 +31,9 @@ if not os.path.isdir('../results'):
 # Open ratings.dat and put it in a numpy array
 ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
+
+users, movies, rat = ratings.max(axis=0)
+utility = np.full((users, movies), np.nan)
 
 # Split data into 5 train and test folds
 folds = 5
@@ -60,7 +64,14 @@ for fold in range(folds):
 
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
-    # pred_value = recommender.get_prediction(train[:, 2])
+    global_average = recommender.get_prediction(train[:, 2])
+
+    '''
+    movie_avg = averages.get_array_averages(train[:, [1, 2]], movies, global_average)
+    user_avg = averages.get_array_averages(train[:, [0, 2]], users, global_average)
+    user_avg[np.isnan(user_avg)] = global_average
+    movie_avg[np.isnan(movie_avg)] = global_average
+    '''
 
     if estimator == 'all':
         index = 0
