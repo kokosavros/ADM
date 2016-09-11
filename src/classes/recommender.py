@@ -1,5 +1,6 @@
 import numpy as np
 import estimator
+import warnings
 
 
 class Recommender(estimator.Estimator):
@@ -9,6 +10,8 @@ class Recommender(estimator.Estimator):
 	directly get error estimations.
 	"""
 	def __init__(self, recommender):
+
+		#warnings.simplefilter("error")
 		self.recommender = recommender
 
 	def get_error_estimation(self, train_set, test_set, estimator):
@@ -27,11 +30,19 @@ class Recommender(estimator.Estimator):
 		"""
 		prediction = self.get_prediction(train_set)
 		self.estimator = estimator
-		train = self.get_estimate(train_set, prediction)
-		test = self.get_estimate(test_set, prediction)
+		if self.recommender == 'naive-global':
+			train = self.get_estimate(train_set, prediction)
+			test = self.get_estimate(test_set, prediction)
+		elif self.recommender == 'naive-user':
+			train = self.get_estimate(train_set, prediction)
+			test = self.get_estimate(test_set, prediction)
+		elif self.recommender == 'naive-item':
+			prediction = prediction[np.newaxis]
+			train = self.get_estimate(train_set, prediction.T)
+			test = self.get_estimate(test_set, prediction.T)	
 		return train, test
 
-	def get_prediction(self, array, size=None):
+	def get_prediction(self, array):
 		"""
 		Get the prediction based on the recommender algorithm selected
 
@@ -44,9 +55,9 @@ class Recommender(estimator.Estimator):
 		if self.recommender == 'naive-global':
 			return self.naive_global(array)
 		elif self.recommender == 'naive-user':
-			return self.naive_user(array, size)
+			return self.naive_user(array)
 		elif self.recommender == 'naive-item':
-			return self.naive_item(array, size)
+			return self.naive_item(array)
 
 	def naive_global(self, array):
 		"""
@@ -59,23 +70,20 @@ class Recommender(estimator.Estimator):
 			The average score of the input
 
 		"""
-		return np.mean(array)
+		return np.nanmean(array)
 
-	def naive_user(self, array, total):
+	def naive_user(self, array):
 		"""
 		This function returns the predictions for naive user recommender
 
 		Args:
 			array: An array with the values of the type and the rating(2 dimensional)
-			total: The total amount of users in the data
 		Returns:
-			An array with the average score for each user. The size of the array is
-			total + 1, since we do not have user 0. Items that are missing
-			from the array get nan.
+			An array with the average score for each user.
 		"""
-		return self.array_average(array, total)
+		return np.nanmean(array, axis=0)
 
-	def naive_item(self, array, total):
+	def naive_item(self, array):
 		"""
 		This function returns the predictions for naive user recommender
 
@@ -87,32 +95,4 @@ class Recommender(estimator.Estimator):
 			total + 1, since we do not movie 0. Items that are missing
 			from the array get nan.
 		"""
-		return self.array_average(array, total)
-
-	def array_average(self, array, total):
-		"""
-		This function computes the [Type] Average Score Recommender(User or Item).
-
-		Args:
-			array: An array with the values of the type and the rating(2 dimensional)
-			total: The total amount of the items of the type(either movie or user)
-					in the data
-		Returns:
-			An array with the average score for each item. The size of the array is
-			total + 1, since we do not have user 0 or movie 0. Items that are missing
-			from the array get nan.
-		"""
-		# Create an array to hold the average
-		averages = np.zeros(array[:, 0].max(axis=0) + 1)
-		# Count the occurences of each item
-		occur = np.bincount(array[:, 0])
-		# Sum ratings for each item in the array
-		for entry in array:
-			averages[entry[0]] += entry[1]
-		# Get the average
-		result = np.divide(averages, occur)
-		# Append missing values in array from the full dataset
-		result = np.append(
-			result,
-			np.ones(total - len(result) + 1) * np.nan)
-		return result
+		return np.nanmean(array, axis=1)

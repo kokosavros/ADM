@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.ma as ma
 import argparse
 import os
 from classes.estimator import Estimator
@@ -6,7 +7,7 @@ from classes.recommender import Recommender
 
 
 # Parse the arguments
-choices = ['naive-global']
+choices = ['naive-global', 'naive-user', 'naive-item']
 estimator_choices = ['rmse', 'mae']
 
 parser = argparse.ArgumentParser()
@@ -33,7 +34,12 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
-utility = np.full((users, movies), np.nan)
+# Create utility matrix
+utility = np.full((users + 1, movies + 1), np.nan)
+for rating in ratings:
+    utility[rating[0], rating[1]] = rating[2]
+
+# print utility
 
 # Split data into 5 train and test folds
 folds = 5
@@ -48,43 +54,39 @@ else:
     err_test = np.zeros(folds)
 
 # To make sure we are able to repeat results, set the random seed to something:
-np.random.seed(17)
+np.random.seed(10)
 
 # Make an array of size == len(ratings) with values from 0-5
-seqs = [x % folds for x in range(len(ratings))]
+seqs = [x % folds for x in range((users + 1) * (movies + 1))]
 # Randomize its order to put entries into folds
 np.random.shuffle(seqs)
 
+seqs = np.reshape(seqs, (users + 1, movies + 1))
+
 # For each fold:
 for fold in range(folds):
-    train_sel = np.array([x != fold for x in seqs])
-    test_sel = np.array([x == fold for x in seqs])
-    train = ratings[train_sel]
-    test = ratings[test_sel]
+    train_sel = ma.masked_not_equal(seqs, fold)
+    test_sel = ma.masked_equal(seqs, fold)
+    train = ma.MaskedArray(utility, mask=train_sel.mask, fill_value=np.nan)
+    
+    test = ma.MaskedArray(utility, mask=test_sel.mask, fill_value=np.nan)
 
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
-    global_average = recommender.get_prediction(train[:, 2])
-
-    '''
-    movie_avg = averages.get_array_averages(train[:, [1, 2]], movies, global_average)
-    user_avg = averages.get_array_averages(train[:, [0, 2]], users, global_average)
-    user_avg[np.isnan(user_avg)] = global_average
-    movie_avg[np.isnan(movie_avg)] = global_average
-    '''
+    global_average = recommender.get_prediction(train)
 
     if estimator == 'all':
         index = 0
         for err_estimator in estimator_choices:
             errors = recommender.get_error_estimation(
-                train[:, 2], test[:, 2], err_estimator)
+                train, test, err_estimator)
 
             err_train[index, fold] = errors[0]
             err_test[index, fold] = errors[1]
             index += 1
     else:
         errors = recommender.get_error_estimation(
-            train[:, 2], test[:, 2], estimator)
+            train, test, estimator)
         err_train[fold] = errors[0]
         err_test[fold] = errors[1]
 
@@ -109,5 +111,5 @@ with open(filename, 'w') as output:
             "Mean error on  TEST: %s\n" % np.mean(err_test))
 
 print('Results were saved in \'../results/%s.txt\'' % algorithm)
-# Just in case you need linear regression: help(np.linalg.lstsq) will tell you 
+# Just in case you need linear regression: help(np.linalg.lstsq) will tell you
 # how to do it!

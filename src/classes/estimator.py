@@ -1,6 +1,7 @@
 import numpy as np
 
 
+
 class Estimator():
 	"""
 	The class containing the different estimators we use.
@@ -47,4 +48,4 @@ class Estimator():
 		Returns:
 			The error between the real values and the predicted values
 		"""
-		return np.mean(np.absolute((values - pred_value)))
+		return np.nanmean(np.absolute((values - pred_value)))
