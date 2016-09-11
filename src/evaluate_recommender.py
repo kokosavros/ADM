@@ -34,6 +34,7 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
+
 # Create utility matrix
 utility = np.full((users + 1, movies + 1), np.nan)
 for rating in ratings:
