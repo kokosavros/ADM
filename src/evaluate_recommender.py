@@ -6,7 +6,7 @@ from classes.recommender import Recommender
 
 
 # Parse the arguments
-choices = ['naive-global']
+choices = ['naive-global', 'naive-user', 'naive-item']
 estimator_choices = ['rmse', 'mae']
 
 parser = argparse.ArgumentParser()
@@ -63,27 +63,26 @@ for fold in range(folds):
 
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
-    global_average = recommender.get_prediction(train[:, 2])
-
-    '''
-    movie_avg = averages.get_array_averages(train[:, [1, 2]], movies, global_average)
-    user_avg = averages.get_array_averages(train[:, [0, 2]], users, global_average)
-    user_avg[np.isnan(user_avg)] = global_average
-    movie_avg[np.isnan(movie_avg)] = global_average
-    '''
+    if algorithm == 'naive-user':
+        prediction, global_average = recommender.get_prediction(train, users)
+    elif algorithm == 'naive-item':
+        prediction, global_average = recommender.get_prediction(train, movies)
+    else:
+        prediction = 0
+        global_average = recommender.get_prediction(train)
 
     if estimator == 'all':
         index = 0
         for err_estimator in estimator_choices:
             errors = recommender.get_error_estimation(
-                train[:, 2], test[:, 2], err_estimator)
+                train, test, err_estimator)
 
             err_train[index, fold] = errors[0]
             err_test[index, fold] = errors[1]
             index += 1
     else:
         errors = recommender.get_error_estimation(
-            train[:, 2], test[:, 2], estimator)
+            train, test, estimator)
         err_train[fold] = errors[0]
         err_test[fold] = errors[1]
 

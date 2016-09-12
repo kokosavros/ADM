@@ -27,8 +27,8 @@ class Recommender(estimator.Estimator):
 		"""
 		prediction = self.get_prediction(train_set)
 		self.estimator = estimator
-		train = self.get_estimate(train_set, prediction)
-		test = self.get_estimate(test_set, prediction)
+		train = self.get_estimate(train_set[:, 2], prediction)
+		test = self.get_estimate(test_set[:, 2], prediction)
 		return train, test
 
 	def get_prediction(self, array, size=None):
@@ -44,9 +44,9 @@ class Recommender(estimator.Estimator):
 		if self.recommender == 'naive-global':
 			return self.naive_global(array)
 		elif self.recommender == 'naive-user':
-			return self.naive_user(array, size)
+			return self.naive_user(array, size), self.naive_global(array)
 		elif self.recommender == 'naive-item':
-			return self.naive_item(array, size)
+			return self.naive_item(array, size), self.naive_global(array)
 
 	def naive_global(self, array):
 		"""
@@ -59,7 +59,7 @@ class Recommender(estimator.Estimator):
 			The average score of the input
 
 		"""
-		return np.mean(array)
+		return np.mean(array[:, 2])
 
 	def naive_user(self, array, total):
 		"""
@@ -73,7 +73,7 @@ class Recommender(estimator.Estimator):
 			total + 1, since we do not have user 0. Items that are missing
 			from the array get nan.
 		"""
-		return self.array_average(array, total)
+		return self.array_average(array[:, [0, 2]], total)
 
 	def naive_item(self, array, total):
 		"""
@@ -87,7 +87,7 @@ class Recommender(estimator.Estimator):
 			total + 1, since we do not movie 0. Items that are missing
 			from the array get nan.
 		"""
-		return self.array_average(array, total)
+		return self.array_average(array[:, [1, 2]], total)
 
 	def array_average(self, array, total):
 		"""
