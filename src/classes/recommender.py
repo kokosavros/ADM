@@ -48,12 +48,17 @@ class Recommender(estimator.Estimator):
 		Returns:
 			The prediction in float number
 		"""
+		global_average = self.naive_global(array)
 		if self.recommender == 'naive-global':
-			return self.naive_global(array)
+			return global_average
 		elif self.recommender == 'naive-user':
-			return self.naive_user(array, size), self.naive_global(array)
+			prediction = self.naive_user(array, size)
+			prediction[np.isnan(prediction)] = global_average
+			return prediction
 		elif self.recommender == 'naive-item':
-			return self.naive_item(array, size), self.naive_global(array)
+			prediction = self.naive_item(array, size)
+			prediction[np.isnan(prediction)] = global_average
+			return prediction
 
 	def naive_global(self, array):
 		"""

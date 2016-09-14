@@ -65,9 +65,11 @@ for fold in range(folds):
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
     if algorithm == 'naive-user':
-        prediction, global_average = recommender.get_prediction(train, size=users)
+        prediction = recommender.get_prediction(
+            train, size=users)
     elif algorithm == 'naive-item':
-        prediction, global_average = recommender.get_prediction(train, size=movies)
+        prediction = recommender.get_prediction(
+            train, size=movies)
     else:
         global_average = 0
         prediction = recommender.get_prediction(train)
@@ -80,7 +82,7 @@ for fold in range(folds):
         err_train[index, fold] = errors[0]
         err_test[index, fold] = errors[1]
         index += 1
-    
+
 # Output in file
 filename = '../results/' + algorithm + '.txt'
 with open(filename, 'w') as output:
