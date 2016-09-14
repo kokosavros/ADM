@@ -11,7 +11,7 @@ class Recommender(estimator.Estimator):
 	def __init__(self, recommender):
 		self.recommender = recommender
 
-	def get_error_estimation(self, train_set, test_set, estimator):
+	def get_error_estimation(self, train_set, test_set, estimator, prediction):
 		"""
 		Get the errors for on the train set and the test set, based
 		on the desired estimator.
@@ -25,10 +25,17 @@ class Recommender(estimator.Estimator):
 			An array with the computed errors on the train set and the test
 			set
 		"""
-		prediction = self.get_prediction(train_set)
+		# prediction = self.get_prediction(train_set)
 		self.estimator = estimator
-		train = self.get_estimate(train_set[:, 2], prediction)
-		test = self.get_estimate(test_set[:, 2], prediction)
+		if self.recommender == 'naive-global':
+			train = self.get_estimate(train_set[:, 2], prediction)
+			test = self.get_estimate(test_set[:, 2], prediction)
+		elif self.recommender == 'naive-user':
+			train = self.get_estimate(train_set[:, [0, 2]], prediction)
+			test = self.get_estimate(test_set[:, [0, 2]], prediction)
+		elif self.recommender == 'naive-item':
+			train = self.get_estimate(train_set[:, [1, 2]], prediction)
+			test = self.get_estimate(test_set[:, [1, 2]], prediction)
 		return train, test
 
 	def get_prediction(self, array, size=None):

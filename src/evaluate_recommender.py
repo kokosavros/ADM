@@ -7,7 +7,7 @@ from classes.recommender import Recommender
 
 # Parse the arguments
 choices = ['naive-global', 'naive-user', 'naive-item']
-estimator_choices = ['rmse', 'mae']
+estimator_choices = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -40,12 +40,13 @@ folds = 5
 # Allocate memory for results:
 # 2 dimensional to keep both RMSE and MAE
 if estimator == 'all':
+    estimator_choices = ['rmse', 'mae']
     err_train = np.zeros((len(estimator_choices), folds))
     err_test = np.zeros((len(estimator_choices), folds))
 else:
+    estimator_choices.push(estimator)
     err_train = np.zeros(folds)
     err_test = np.zeros(folds)
-
 # To make sure we are able to repeat results, set the random seed to something:
 np.random.seed(17)
 
@@ -64,28 +65,22 @@ for fold in range(folds):
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
     if algorithm == 'naive-user':
-        prediction, global_average = recommender.get_prediction(train, users)
+        prediction, global_average = recommender.get_prediction(train, size=users)
     elif algorithm == 'naive-item':
-        prediction, global_average = recommender.get_prediction(train, movies)
+        prediction, global_average = recommender.get_prediction(train, size=movies)
     else:
-        prediction = 0
-        global_average = recommender.get_prediction(train)
+        global_average = 0
+        prediction = recommender.get_prediction(train)
 
-    if estimator == 'all':
-        index = 0
-        for err_estimator in estimator_choices:
-            errors = recommender.get_error_estimation(
-                train, test, err_estimator)
-
-            err_train[index, fold] = errors[0]
-            err_test[index, fold] = errors[1]
-            index += 1
-    else:
+    index = 0
+    for err_estimator in estimator_choices:
         errors = recommender.get_error_estimation(
-            train, test, estimator)
-        err_train[fold] = errors[0]
-        err_test[fold] = errors[1]
+            train, test, err_estimator, prediction)
 
+        err_train[index, fold] = errors[0]
+        err_test[index, fold] = errors[1]
+        index += 1
+    
 # Output in file
 filename = '../results/' + algorithm + '.txt'
 with open(filename, 'w') as output:

@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 class Estimator():
@@ -34,7 +35,14 @@ class Estimator():
 		Returns:
 			The error between the real values and the predicted values
 		"""
-		return np.sqrt(np.mean((values - pred_value)**2))
+		if type(pred_value) == np.float64:
+			return np.sqrt(np.mean((values - pred_value)**2))
+		error = 0
+		index = 0
+		for row in values:
+			error += (row[1] - pred_value[row[0]])**2
+			index += 1
+		return math.sqrt(error / index)
 
 	def mae(self, values, pred_value):
 		"""
@@ -47,4 +55,11 @@ class Estimator():
 		Returns:
 			The error between the real values and the predicted values
 		"""
-		return np.mean(np.absolute((values - pred_value)))
+		if type(pred_value) == np.float64:
+			return np.mean(np.absolute((values - pred_value)))
+		error = 0
+		index = 0
+		for row in values:
+			error += math.fabs(row[1] - pred_value[row[0]])
+			index += 1
+		return error / index
