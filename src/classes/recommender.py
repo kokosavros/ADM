@@ -20,6 +20,7 @@ class Recommender(estimator.Estimator):
 			train_set: The training set
 			test_set: The test set
 			estimator: The type of the estimator function(RMSE, MAE, etc)
+			prediction: The prediction of the model
 
 		Returns:
 			An array with the computed errors on the train set and the test
@@ -43,7 +44,7 @@ class Recommender(estimator.Estimator):
 		Get the prediction based on the recommender algorithm selected
 
 		Args:
-			array: The set with the values on which we comput the prediction
+			array: The set with the values on which we compute the prediction
 			size: Optional argument to pass size of user or items
 		Returns:
 			The prediction in float number
@@ -73,13 +74,13 @@ class Recommender(estimator.Estimator):
 		"""
 		return np.mean(array[:, 2])
 
-	def naive_user(self, array, total):
+	def naive_user(self, array, total_users):
 		"""
 		This function returns the predictions for naive user recommender
 
 		Args:
 			array: An array with the values of the type and the rating(2 dimensional)
-			total: The total amount of users in the data
+			total_users: The total amount of users in the data
 		Returns:
 			An array with the average score for each user. The size of the array is
 			total + 1, since we do not have user 0. Items that are missing
@@ -87,19 +88,19 @@ class Recommender(estimator.Estimator):
 		"""
 		return self.array_average(array[:, [0, 2]], total)
 
-	def naive_item(self, array, total):
+	def naive_item(self, array, total_items):
 		"""
 		This function returns the predictions for naive user recommender
 
 		Args:
 			array: An array with the values of the type and the rating(2 dimensional)
-			total: The total amount of items in the data
+			total_items: The total amount of items in the data
 		Returns:
 			An array with the average score for each item. The size of the array is
 			total + 1, since we do not movie 0. Items that are missing
 			from the array get nan.
 		"""
-		return self.array_average(array[:, [1, 2]], total)
+		return self.array_average(array[:, [1, 2]], total_items)
 
 	def array_average(self, array, total):
 		"""
