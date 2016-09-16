@@ -37,6 +37,9 @@ class Recommender(estimator.Estimator):
 		elif self.recommender == 'naive-item':
 			train = self.get_estimate(train_set[:, [1, 2]], prediction)
 			test = self.get_estimate(test_set[:, [1, 2]], prediction)
+		elif self.recommender == 'naive-regression':
+			train = self.get_estimate(train_set, prediction)
+			test = self.get_estimate(test_set, prediction)
 		return train, test
 
 	def get_prediction(self, array, size=None):
@@ -61,32 +64,32 @@ class Recommender(estimator.Estimator):
 			prediction[np.isnan(prediction)] = global_average
 			return prediction
 		elif self.recommender == 'naive-regression':
+
+			r_users_items = array[:, 2]
+
 			prediction_items = self.naive_item(array, size[1])
 			prediction_users = self.naive_user(array, size[0])
+			r_items = np.zeros(len(r_users_items))
+			r_users = np.zeros(len(r_users_items))
 
-			r_items = self.get_utility_matrix(array, size, prediction_items)
-			print r_items
-			r_users = self.get_utility_matrix(array, size, prediction_users)
-			print r_users
-			
-			
+			index = 0
+			for item in array:
+				r_items[index] = prediction_items[item[1]]
+				r_users[index] = prediction_users[item[0]]
+				index += 1
 
-
-			'''
-			prediction_items[np.isnan(prediction_items)] = global_average
-			prediction_users[np.isnan(prediction_users)] = global_average
-
-			# Create utility matrix
-			r_user = np.full((size[0] + 1, size[1] + 1), np.nan)
-			for rating in prediction_users:
-			    utility[rating[0], rating[1]] = rating[2]
-
-			r_item = np.full((size[0] + 1, size[1] + 1), np.nan)
-			for rating in prediction_items:
-			    utility[rating[0], rating[1]] = rating[2]
-			# prediction[np.isnan(prediction)] = global_average
+			A = np.vstack([r_users, r_items, np.ones(len(r_users_items))]).T
+			a, b, c = np.linalg.lstsq(A, r_users_items)[0]
+			prediction = np.full((size[0] + 1, size[1] + 1), np.nan)
+			for x in range(size[0] + 1):
+				for y in range(size[1] + 1):
+					prediction[x, y] = \
+						a * prediction_users[x] +\
+						b * prediction_items[y] +\
+						c
+			# print prediction
+			prediction[np.isnan(prediction)] = global_average
 			return prediction
-			'''
 
 	def naive_global(self, array):
 		"""
@@ -176,12 +179,13 @@ class Recommender(estimator.Estimator):
 			A numpy ndarray filled with values and predictions. Its size is
 			size + 1 in both directions.
 
-		"""
-		matrix = np.full((size[0] + 1, size[1] + 1), np.nan)
-		if prediction is None:
+		"""		
+		if type(prediction) == np.float64:
+			matrix = np.full((size[0] + 1, size[1] + 1), prediction)
 			for rating in array:
 				matrix[rating[0], rating[1]] = rating[2]
 			return matrix
+		matrix = np.full((size[0] + 1, size[1] + 1), np.nan)
 		if len(prediction) == size[1] + 1:
 			index = 0
 			for rating in prediction:

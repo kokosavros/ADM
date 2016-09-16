@@ -37,10 +37,17 @@ class Estimator():
 		"""
 		if type(pred_value) == np.float64:
 			return np.sqrt(np.mean((values - pred_value)**2))
+		if len(pred_value.shape) == 1:
+			error = 0
+			index = 0
+			for row in values:
+				error += (row[1] - pred_value[row[0]])**2
+				index += 1
+			return math.sqrt(error / index)
 		error = 0
 		index = 0
 		for row in values:
-			error += (row[1] - pred_value[row[0]])**2
+			error += (row[2] - pred_value[row[0], row[1]])**2
 			index += 1
 		return math.sqrt(error / index)
 
@@ -57,9 +64,16 @@ class Estimator():
 		"""
 		if type(pred_value) == np.float64:
 			return np.mean(np.absolute((values - pred_value)))
+		if len(pred_value.shape) == 1:
+			error = 0
+			index = 0
+			for row in values:
+				error += math.fabs(row[1] - pred_value[row[0]])
+				index += 1
+			return error / index
 		error = 0
 		index = 0
 		for row in values:
-			error += math.fabs(row[1] - pred_value[row[0]])
+			error += math.fabs(row[2] - pred_value[row[0], row[1]])
 			index += 1
 		return error / index
