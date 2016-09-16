@@ -53,13 +53,40 @@ class Recommender(estimator.Estimator):
 		if self.recommender == 'naive-global':
 			return global_average
 		elif self.recommender == 'naive-user':
-			prediction = self.naive_user(array, size)
+			prediction = self.naive_user(array, size[0])
 			prediction[np.isnan(prediction)] = global_average
 			return prediction
 		elif self.recommender == 'naive-item':
-			prediction = self.naive_item(array, size)
+			prediction = self.naive_item(array, size[1])
 			prediction[np.isnan(prediction)] = global_average
 			return prediction
+		elif self.recommender == 'naive-regression':
+			prediction_items = self.naive_item(array, size[1])
+			prediction_users = self.naive_user(array, size[0])
+
+			r_items = self.get_utility_matrix(array, size, prediction_items)
+			print r_items
+			r_users = self.get_utility_matrix(array, size, prediction_users)
+			print r_users
+			
+			
+
+
+			'''
+			prediction_items[np.isnan(prediction_items)] = global_average
+			prediction_users[np.isnan(prediction_users)] = global_average
+
+			# Create utility matrix
+			r_user = np.full((size[0] + 1, size[1] + 1), np.nan)
+			for rating in prediction_users:
+			    utility[rating[0], rating[1]] = rating[2]
+
+			r_item = np.full((size[0] + 1, size[1] + 1), np.nan)
+			for rating in prediction_items:
+			    utility[rating[0], rating[1]] = rating[2]
+			# prediction[np.isnan(prediction)] = global_average
+			return prediction
+			'''
 
 	def naive_global(self, array):
 		"""
@@ -86,7 +113,7 @@ class Recommender(estimator.Estimator):
 			total + 1, since we do not have user 0. Items that are missing
 			from the array get nan.
 		"""
-		return self.array_average(array[:, [0, 2]], total)
+		return self.array_average(array[:, [0, 2]], total_users)
 
 	def naive_item(self, array, total_items):
 		"""
@@ -102,7 +129,8 @@ class Recommender(estimator.Estimator):
 		"""
 		return self.array_average(array[:, [1, 2]], total_items)
 
-	def array_average(self, array, total):
+	@staticmethod
+	def array_average(array, total):
 		"""
 		This function computes the [Type] Average Score Recommender(User or Item).
 
@@ -129,3 +157,45 @@ class Recommender(estimator.Estimator):
 			result,
 			np.ones(total - len(result) + 1) * np.nan)
 		return result
+
+	@staticmethod
+	def get_utility_matrix(array, size, prediction=None):
+		"""
+		Return an ndarray to serve as a utillity matrix. If we have
+		a prediction from a model, use these predictions for the values
+		we don't know
+
+		Args:
+			array: THe array with the initial values we have. It can be
+				a train set.
+			size: The size of our complete dataset
+			prediction: The prediction we have from naive-user or naive item
+				algorithms
+
+		Returns:
+			A numpy ndarray filled with values and predictions. Its size is
+			size + 1 in both directions.
+
+		"""
+		matrix = np.full((size[0] + 1, size[1] + 1), np.nan)
+		if prediction is None:
+			for rating in array:
+				matrix[rating[0], rating[1]] = rating[2]
+			return matrix
+		if len(prediction) == size[1] + 1:
+			index = 0
+			for rating in prediction:
+				for row in matrix:
+					row[index] = rating
+				index += 1
+			for rating in array:
+				matrix[rating[0], rating[1]] = rating[2]
+			return matrix
+		index = 0
+		for rating in prediction:
+			matrix[index] = rating
+			index += 1
+		for rating in array:
+			matrix[rating[0], rating[1]] = rating[2]
+
+		return matrix

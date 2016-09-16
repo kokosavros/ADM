@@ -6,7 +6,7 @@ from classes.recommender import Recommender
 
 
 # Parse the arguments
-choices = ['naive-global', 'naive-user', 'naive-item']
+choices = ['naive-global', 'naive-user', 'naive-item', 'naive-regression']
 estimator_choices = []
 
 parser = argparse.ArgumentParser()
@@ -33,6 +33,7 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
+sizes = [users, movies]
 
 # Split data into 5 train and test folds
 folds = 5
@@ -66,10 +67,13 @@ for fold in range(folds):
     recommender = Recommender(algorithm)
     if algorithm == 'naive-user':
         prediction = recommender.get_prediction(
-            train, size=users)
+            train, size=sizes)
     elif algorithm == 'naive-item':
         prediction = recommender.get_prediction(
-            train, size=movies)
+            train, size=sizes)
+    elif algorithm == 'naive-regression':
+        prediction = recommender.get_prediction(
+            train, size=sizes)
     else:
         global_average = 0
         prediction = recommender.get_prediction(train)
