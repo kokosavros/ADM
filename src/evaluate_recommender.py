@@ -7,8 +7,8 @@ from classes.recommender import Recommender
 
 
 # Parse the arguments
-choices = ['naive-global', 'naive-user', 'naive-item']
-estimator_choices = ['rmse', 'mae']
+choices = ['naive-global', 'naive-user', 'naive-item', 'naive-regression']
+estimator_choices = []
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -34,6 +34,7 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
+sizes = [users, movies]
 
 # Create utility matrix
 utility = np.full((users + 1, movies + 1), np.nan)
@@ -48,12 +49,13 @@ folds = 5
 # Allocate memory for results:
 # 2 dimensional to keep both RMSE and MAE
 if estimator == 'all':
+    estimator_choices = ['rmse', 'mae']
     err_train = np.zeros((len(estimator_choices), folds))
     err_test = np.zeros((len(estimator_choices), folds))
 else:
+    estimator_choices.push(estimator)
     err_train = np.zeros(folds)
     err_test = np.zeros(folds)
-
 # To make sure we are able to repeat results, set the random seed to something:
 np.random.seed(10)
 
@@ -74,22 +76,33 @@ for fold in range(folds):
 
     # Calculate model parameters: mean rating over the training set:
     recommender = Recommender(algorithm)
-    global_average = recommender.get_prediction(train)
 
-    if estimator == 'all':
-        index = 0
-        for err_estimator in estimator_choices:
-            errors = recommender.get_error_estimation(
-                train, test, err_estimator)
-
-            err_train[index, fold] = errors[0]
-            err_test[index, fold] = errors[1]
-            index += 1
+    if algorithm == 'naive-user':
+        prediction = recommender.get_prediction(
+            train, size=sizes)
+    elif algorithm == 'naive-item':
+        prediction = recommender.get_prediction(
+            train, size=sizes)
+    elif algorithm == 'naive-regression':
+        prediction = recommender.get_prediction(
+            train, size=sizes)
+        np.clip(prediction, 1, 5)
     else:
+        global_average = 0
+        prediction = recommender.get_prediction(train)
+
+    index = 0
+    for err_estimator in estimator_choices:
         errors = recommender.get_error_estimation(
-            train, test, estimator)
-        err_train[fold] = errors[0]
-        err_test[fold] = errors[1]
+            train,
+            test,
+            err_estimator,
+            prediction
+        )
+
+        err_train[index, fold] = errors[0]
+        err_test[index, fold] = errors[1]
+        index += 1
 
 # Output in file
 filename = '../results/' + algorithm + '.txt'
@@ -112,5 +125,3 @@ with open(filename, 'w') as output:
             "Mean error on  TEST: %s\n" % np.mean(err_test))
 
 print('Results were saved in \'../results/%s.txt\'' % algorithm)
-# Just in case you need linear regression: help(np.linalg.lstsq) will tell you
-# how to do it!
