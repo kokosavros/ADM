@@ -64,31 +64,33 @@ class Recommender(estimator.Estimator):
 			prediction[np.isnan(prediction)] = global_average
 			return prediction
 		elif self.recommender == 'naive-regression':
-
-			r_users_items = array[:, 2]
-
 			prediction_items = self.naive_item(array, size[1])
 			prediction_users = self.naive_user(array, size[0])
-			r_items = np.zeros(len(r_users_items))
-			r_users = np.zeros(len(r_users_items))
 
-			index = 0
-			for item in array:
-				r_items[index] = prediction_items[item[1]]
-				r_users[index] = prediction_users[item[0]]
-				index += 1
+			r_users_items = array[:, 2]
+			r_items = prediction_items[array[:, 1]]
+			r_users = prediction_users[array[:, 0]]
 
-			A = np.vstack([r_users, r_items, np.ones(len(r_users_items))]).T
+			A = np.vstack(
+				[
+					r_users,
+					r_items,
+					np.ones(len(r_users_items))
+				]
+			).T
+
 			a, b, c = np.linalg.lstsq(A, r_users_items)[0]
 			prediction = np.full((size[0] + 1, size[1] + 1), np.nan)
+
 			for x in range(size[0] + 1):
 				for y in range(size[1] + 1):
 					prediction[x, y] = \
 						a * prediction_users[x] +\
 						b * prediction_items[y] +\
 						c
-			# print prediction
-			prediction[np.isnan(prediction)] = global_average
+
+			prediction[np.isnan(prediction)] = \
+				(np.nanmean(prediction_users) + np.nanmean(prediction_items)) / 2
 			return prediction
 
 	def naive_global(self, array):

@@ -74,6 +74,7 @@ for fold in range(folds):
     elif algorithm == 'naive-regression':
         prediction = recommender.get_prediction(
             train, size=sizes)
+        np.clip(prediction, 1, 5)
     else:
         global_average = 0
         prediction = recommender.get_prediction(train)
