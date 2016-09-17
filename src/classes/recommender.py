@@ -1,5 +1,6 @@
 import numpy as np
 import estimator
+import math
 
 
 class Recommender(estimator.Estimator):
@@ -91,6 +92,8 @@ class Recommender(estimator.Estimator):
 				(np.nanmean(prediction_users) + np.nanmean(prediction_items)) / 2
 			prediction = np.clip(prediction, 1, 5)
 			return prediction
+		elif self.recommender == 'matrix-factorization':
+			return self.matrix_factorization(self.train_set)
 
 	def naive_global(self, array):
 		"""
@@ -127,6 +130,51 @@ class Recommender(estimator.Estimator):
 			from the array get nan.
 		"""
 		return self.array_average(array[:, [1, 2]], total_items)
+
+	def matrix_factorization(self, array, num_factors=10, num_iter=75, reg=0.05, l_r=0.005):
+		"""
+		Compute the matrix factorization prediction.
+
+		Args:
+			array: The matrix to be predicted. Users x Items
+			num_factors: The number of features
+			num_iter: Maximum number of iterations to optimise the solution
+			reg: Regularization parameter
+			l_r: Learning rate
+		Returns:
+			The final prediction of X. UM.T
+		"""
+		# Make the rating matrix
+		X = self.get_utility_matrix(array, self.size)
+		print X.shape
+		I, J = X.shape
+		# Initialize random U and M matrices
+		U = np.random.rand(I, num_factors)
+		M = np.random.rand(num_factors, J)
+
+		for iteration in xrange(num_iter):
+			# Estimate U and M
+			for i in xrange(I):
+				for j in xrange(J):
+					if np.isfinite(X[i][j]):
+						# 1. Compute e_ij
+						e_ij = X[i][j] - np.dot(U[i, :], M[:, j])
+						# 2. Update weights in the opposite direction of gradient
+						#  gradient = - 2* e_ij * M[k][j]
+						for k in xrange(num_factors):
+							U[i][k] += l_r * (2 * e_ij * M[k][j] - reg * U[i][k])
+							M[k][j] += l_r * (2 * e_ij * U[i][k] - reg * M[k][j])
+			X_estimate = np.dot(U, M)
+			error = 0
+			for i in xrange(I):
+				for j in xrange(J):
+					if np.isfinite(X[i][j]):
+						error += (X[i][j] - np.dot(U[i, :], M[:, j])) ** 2
+						for k in xrange(num_factors):
+							error += (reg / 2) * (U[i][k] ** 2 + M[k][j] ** 2)
+			if error < 0.001:
+				break
+		return np.dot(P, Q.T)
 
 	@staticmethod
 	def array_average(array, total):
@@ -173,12 +221,16 @@ class Recommender(estimator.Estimator):
 			size + 1 in both directions.
 		"""
 		if type(prediction) == np.float64:
-			matrix = np.full((size[0] + 1, size[1] + 1), prediction)
+			matrix = np.full((size[0], size[1]), prediction)
 			for rating in array:
 				matrix[rating[0], rating[1]] = rating[2]
 			return matrix
-		matrix = np.full((size[0] + 1, size[1] + 1), np.nan)
-		if len(prediction) == size[1] + 1:
+		matrix = np.full((size[0], size[1]), np.nan)
+		if prediction is None:
+			for rating in array:
+				matrix[rating[0] - 1, rating[1] - 1] = rating[2]
+			return matrix
+		if len(prediction) == size[1]:
 			index = 0
 			for rating in prediction:
 				for row in matrix:

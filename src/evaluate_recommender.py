@@ -6,7 +6,14 @@ from classes.recommender import Recommender
 import export
 
 # Parse the arguments
-alg_choices = ['naive-global', 'naive-user', 'naive-item', 'naive-regression']
+alg_choices = [
+    'naive-global',
+    'naive-user',
+    'naive-item',
+    'naive-regression',
+    'matrix-factorization'
+]
+
 est_choices = ['rmse', 'mae']
 
 parser = argparse.ArgumentParser()
@@ -48,7 +55,7 @@ folds = 5
 np.random.seed(17)
 
 # Make an array of size == len(ratings) with values from 0-5
-seqs = [x % folds for x in range(len(ratings))]
+seqs = [x % folds for x in xrange(len(ratings))]
 # Randomize its order to put entries into folds
 np.random.shuffle(seqs)
 
@@ -66,6 +73,7 @@ for fold in range(folds):
 
     # Get prediction
     prediction = recommender.get_prediction()
+    print prediction
 
     # Compute the sum of the errors
     errors = np.add(
