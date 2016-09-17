@@ -12,26 +12,39 @@ class Estimator():
 	def get_estimate(self, values, pred_value):
 		"""
 		Get the estimate based on the estimator set.
-
 		Args:
 			values: The set on which we compute the error estimation
 			pred_value: The value predicted by the model we have used
-
 		Returns:
 			The error between the real values and the predicted values
 		"""
+		if self.estimator is None:
+			return np.array(
+				[
+					self.rmse(values, pred_value),
+					self.mae(values, pred_value)
+				]
+			)
 		if self.estimator == 'rmse':
-			return self.rmse(values, pred_value)
-		return self.mae(values, pred_value)
+			return np.array(
+				[
+					self.rmse(values, pred_value),
+					np.nan
+				]
+			)
+		return np.array(
+			[
+				np.nan,
+				self.mae(values, pred_value)
+			]
+		)
 
 	def rmse(self, values, pred_value):
 		"""
 		The Root Mean Squared Error
-
 		Args:
 			values: The set on which we compute the error estimation
 			pred_value: The value predicted by the model we have used
-
 		Returns:
 			The error between the real values and the predicted values
 		"""
@@ -46,11 +59,9 @@ class Estimator():
 	def mae(self, values, pred_value):
 		"""
 		The Mean Absolute Error
-
 		Args:
 			values: The set on which we compute the error estimation
 			pred_value: The value predicted by the model we have used
-
 		Returns:
 			The error between the real values and the predicted values
 		"""

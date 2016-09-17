@@ -1,25 +1,30 @@
 import numpy as np
-import numpy.ma as ma
 import argparse
 import os
 from classes.estimator import Estimator
 from classes.recommender import Recommender
-
+import export
 
 # Parse the arguments
-choices = ['naive-global', 'naive-user', 'naive-item', 'naive-regression']
-estimator_choices = []
+alg_choices = ['naive-global', 'naive-user', 'naive-item', 'naive-regression']
+est_choices = ['rmse', 'mae']
 
 parser = argparse.ArgumentParser()
+# Add algorithm argument
 parser.add_argument(
     "algorithm",
     help="The algorithm you want to run",
-    choices=choices)
+    choices=alg_choices
+)
+# Add estimator argument
 parser.add_argument(
-    '-e', '--estimator', help='The error estimator',
-    default='all', choices=['rmse', 'mae', 'all'])
-args = parser.parse_args()
+    '-e', '--estimator',
+    help='The error estimator',
+    default=None,
+    choices=est_choices
+)
 
+args = parser.parse_args()
 algorithm = args.algorithm
 estimator = args.estimator
 
@@ -34,94 +39,42 @@ ratings = np.genfromtxt(
     "../datasets/ratings.dat", usecols=(0, 1, 2), delimiter='::', dtype='int')
 
 users, movies, rat = ratings.max(axis=0)
-sizes = [users, movies]
-
-# Create utility matrix
-utility = np.full((users + 1, movies + 1), np.nan)
-for rating in ratings:
-    utility[rating[0], rating[1]] = rating[2]
-
-# print utility
+dataset_size = [users, movies]
 
 # Split data into 5 train and test folds
 folds = 5
 
-# Allocate memory for results:
-# 2 dimensional to keep both RMSE and MAE
-if estimator == 'all':
-    estimator_choices = ['rmse', 'mae']
-    err_train = np.zeros((len(estimator_choices), folds))
-    err_test = np.zeros((len(estimator_choices), folds))
-else:
-    estimator_choices.push(estimator)
-    err_train = np.zeros(folds)
-    err_test = np.zeros(folds)
 # To make sure we are able to repeat results, set the random seed to something:
-np.random.seed(10)
+np.random.seed(17)
 
 # Make an array of size == len(ratings) with values from 0-5
-seqs = [x % folds for x in range((users + 1) * (movies + 1))]
+seqs = [x % folds for x in range(len(ratings))]
 # Randomize its order to put entries into folds
 np.random.shuffle(seqs)
 
-seqs = np.reshape(seqs, (users + 1, movies + 1))
+# Array to save the errors
+errors = np.zeros((2, len(est_choices)), dtype=np.float64)
 
 # For each fold:
 for fold in range(folds):
-    train_sel = ma.masked_not_equal(seqs, fold)
-    test_sel = ma.masked_equal(seqs, fold)
-    train = ma.MaskedArray(utility, mask=train_sel.mask, fill_value=np.nan)
-    
-    test = ma.MaskedArray(utility, mask=test_sel.mask, fill_value=np.nan)
+    # Build train sets and test set
+    train = ratings[np.array([x != fold for x in seqs])]
+    test = ratings[np.array([x == fold for x in seqs])]
 
-    # Calculate model parameters: mean rating over the training set:
-    recommender = Recommender(algorithm)
+    # Create a recommender object
+    recommender = Recommender(algorithm, train, test, dataset_size)
 
-    if algorithm == 'naive-user':
-        prediction = recommender.get_prediction(
-            train, size=sizes)
-    elif algorithm == 'naive-item':
-        prediction = recommender.get_prediction(
-            train, size=sizes)
-    elif algorithm == 'naive-regression':
-        prediction = recommender.get_prediction(
-            train, size=sizes)
-        np.clip(prediction, 1, 5)
-    else:
-        global_average = 0
-        prediction = recommender.get_prediction(train)
+    # Get prediction
+    prediction = recommender.get_prediction()
 
-    index = 0
-    for err_estimator in estimator_choices:
-        errors = recommender.get_error_estimation(
-            train,
-            test,
-            err_estimator,
-            prediction
-        )
+    # Compute the sum of the errors
+    errors = np.add(
+        errors,
+        recommender.get_error_estimation(estimator, prediction)
+    )
 
-        err_train[index, fold] = errors[0]
-        err_test[index, fold] = errors[1]
-        index += 1
-
-# Output in file
 filename = '../results/' + algorithm + '.txt'
-with open(filename, 'w') as output:
-    output.write('Results for %s:\n' % algorithm)
-    if estimator == 'all':
-        index = 0
-        for err_estimator in estimator_choices:
-            output.write(err_estimator.upper() + '\n')
-            output.write(
-                "Mean error on TRAIN: %s\n" % np.mean(err_train[index, :]))
-            output.write(
-                "Mean error on  TEST: %s\n" % np.mean(err_test[index, :]))
-            index += 1
-    else:
-        output.write(estimator.upper() + '\n')
-        output.write(
-            "Mean error on TRAIN: %s\n" % np.mean(err_train))
-        output.write(
-            "Mean error on  TEST: %s\n" % np.mean(err_test))
+
+export.save_results(filename, errors / folds)
 
 print('Results were saved in \'../results/%s.txt\'' % algorithm)
