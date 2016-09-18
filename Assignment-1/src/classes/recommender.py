@@ -70,35 +70,7 @@ class Recommender(estimator.Estimator):
 			prediction[np.isnan(prediction)] = self.global_average
 			return prediction
 		elif self.recommender == 'naive-regression':
-			prediction_items = self.naive_item(self.train_set, self.size[1])
-			prediction_users = self.naive_user(self.train_set, self.size[0])
-
-			r_users_items = self.train_set[:, 2]
-			r_items = prediction_items[self.train_set[:, 1]]
-			r_users = prediction_users[self.train_set[:, 0]]
-
-			A = np.vstack(
-				[
-					r_users,
-					r_items,
-					np.ones(len(r_users_items))
-				]
-			).T
-
-			a, b, c = np.linalg.lstsq(A, r_users_items)[0]
-			prediction = np.full((self.size[0] + 1, self.size[1] + 1), np.nan)
-
-			for x in range(self.size[0] + 1):
-				for y in range(self.size[1] + 1):
-					prediction[x, y] = \
-						a * prediction_users[x] +\
-						b * prediction_items[y] +\
-						c
-
-			prediction[np.isnan(prediction)] = \
-				(np.nanmean(prediction_users) + np.nanmean(prediction_items)) / 2
-			prediction = np.clip(prediction, 1, 5)
-			return prediction
+			return self.naive_regression(self.train_set, self.size[0], self.size[1])
 		elif self.recommender == 'matrix-factorization':
 			return self.matrix_factorization(self.train_set)
 
@@ -138,7 +110,40 @@ class Recommender(estimator.Estimator):
 		"""
 		return self.array_average(array[:, [1, 2]], total_items)
 
-	def matrix_factorization(self, array, num_factors=1, num_iter=1, reg=0.05, l_r=0.005):
+	def naive_regression(self, array, total_users, total_items):
+		"""
+		"""
+		prediction_items = self.naive_item(array, total_items)
+		prediction_users = self.naive_user(array, total_users)
+
+		r_users_items = array[:, 2]
+		r_items = prediction_items[array[:, 1] - 1]
+		r_users = prediction_users[array[:, 0] - 1]
+
+		A = np.vstack(
+			[
+				r_users,
+				r_items,
+				np.ones(len(r_users_items))
+			]
+		).T
+
+		a, b, c = np.linalg.lstsq(A, r_users_items)[0]
+		prediction = np.full((total_users, total_items), np.nan)
+
+		for x in range(total_users):
+			for y in range(total_items):
+				prediction[x, y] = \
+					a * prediction_users[x] +\
+					b * prediction_items[y] +\
+					c
+
+		prediction[np.isnan(prediction)] = \
+			(np.nanmean(prediction_users) + np.nanmean(prediction_items)) / 2
+		prediction = np.clip(prediction, 1, 5)
+		return prediction
+
+	def matrix_factorization(self, array, num_factors=10, num_iter=75, reg=0.05, l_r=0.005):
 		"""
 		Compute the matrix factorization prediction.
 
