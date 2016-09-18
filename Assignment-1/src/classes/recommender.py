@@ -49,6 +49,9 @@ class Recommender(estimator.Estimator):
 		return train, test
 
 	def get_global_average(self):
+		"""
+		Get the global average
+		"""
 		return self.global_average
 
 	def get_prediction(self):
@@ -91,9 +94,8 @@ class Recommender(estimator.Estimator):
 			array: An array with the values of the type and the rating(2 dimensional)
 			total_users: The total amount of users in the data
 		Returns:
-			An array with the average score for each user. The size of the array is
-			total + 1, since we do not have user 0. Items that are missing
-			from the array get nan.
+			An array with the average score for each user. The length of the array is
+			total_items. Items that are missing from the array get nan.
 		"""
 		return self.array_average(array[:, [0, 2]], total_users)
 
@@ -104,14 +106,22 @@ class Recommender(estimator.Estimator):
 			array: An array with the values of the type and the rating(2 dimensional)
 			total_items: The total amount of items in the data
 		Returns:
-			An array with the average score for each item. The size of the array is
-			total + 1, since we do not movie 0. Items that are missing
-			from the array get nan.
+			An array with the average score for each item. The length of the array is
+			total_items. Items that are missing from the array get nan.
 		"""
 		return self.array_average(array[:, [1, 2]], total_items)
 
 	def naive_regression(self, array, total_users, total_items):
 		"""
+		Compute the naive regression model and return the prediction.
+		
+		Args:
+			array: An array with the values of the type and the rating(2 dimensional)
+			total_users: The total amount of users in the data
+			total_items: The total amount of items in the data
+		Returns:
+			An array with values of a*user_avg + b*item_avg + c. The length of the array is
+			total_users x total_items. Items that are missing from the array get nan value.	
 		"""
 		prediction_items = self.naive_item(array, total_items)
 		prediction_users = self.naive_user(array, total_users)
@@ -154,7 +164,7 @@ class Recommender(estimator.Estimator):
 			reg: Regularization parameter
 			l_r: Learning rate
 		Returns:
-			The final prediction of X. UM.T
+			The final prediction of X = UM
 		"""
 		# Make the rating matrix
 		X = self.get_utility_matrix(array, self.size)
