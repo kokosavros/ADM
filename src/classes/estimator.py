@@ -51,9 +51,11 @@ class Estimator():
 		if type(pred_value) == np.float64:
 			return np.sqrt(np.mean((values - pred_value)**2))
 		if len(pred_value.shape) == 1:
-			errors = np.sum((values[:, 1] - pred_value[values[:, 0]])**2)
+			errors = np.sum((values[:, 1] - pred_value[values[:, 0] - 1])**2)
 			return np.sqrt(errors / len(values))
-		errors = np.sum((values[:, 2] - pred_value[values[:, 0], values[:, 1]])**2)
+		errors = np.sum(
+			(values[:, 2] - pred_value[values[:, 0] - 1, values[:, 1] - 1])**2
+		)
 		return np.sqrt(errors / values.shape[0])
 
 	def mae(self, values, pred_value):
@@ -68,9 +70,10 @@ class Estimator():
 		if type(pred_value) == np.float64:
 			return np.mean(np.absolute((values - pred_value)))
 		if len(pred_value.shape) == 1:
-			return np.sum(np.abs(values[:, 1] - pred_value[values[:, 0]])) / len(values)
+			return np.sum(
+				np.abs(values[:, 1] - pred_value[values[:, 0] - 1])) / len(values)
 		return np.sum(
 			np.abs(
-				values[:, 2] - pred_value[values[:, 0], values[:, 1]]
+				values[:, 2] - pred_value[values[:, 0] - 1, values[:, 1] - 1]
 			)
 		) / values.shape[0]

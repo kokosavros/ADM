@@ -14,6 +14,7 @@ class Recommender(estimator.Estimator):
 		self.train_set = train_set
 		self.test_set = test_set
 		self.size = size
+		self.global_average = self.naive_global(train_set)
 
 	def get_error_estimation(self, estimator, prediction):
 		"""
@@ -42,7 +43,13 @@ class Recommender(estimator.Estimator):
 		elif self.recommender == 'naive-regression':
 			train = self.get_estimate(self.train_set, prediction)
 			test = self.get_estimate(self.test_set, prediction)
+		elif self.recommender == 'matrix-factorization':
+			train = self.get_estimate(self.train_set, prediction)
+			test = self.get_estimate(self.test_set, prediction)
 		return train, test
+
+	def get_global_average(self):
+		return self.global_average
 
 	def get_prediction(self):
 		"""
@@ -51,16 +58,16 @@ class Recommender(estimator.Estimator):
 		Returns:
 			The prediction in float number
 		"""
-		global_average = self.naive_global(self.train_set)
+		
 		if self.recommender == 'naive-global':
-			return global_average
+			return self.global_average
 		elif self.recommender == 'naive-user':
 			prediction = self.naive_user(self.train_set, self.size[0])
-			prediction[np.isnan(prediction)] = global_average
+			prediction[np.isnan(prediction)] = self.global_average
 			return prediction
 		elif self.recommender == 'naive-item':
 			prediction = self.naive_item(self.train_set, self.size[1])
-			prediction[np.isnan(prediction)] = global_average
+			prediction[np.isnan(prediction)] = self.global_average
 			return prediction
 		elif self.recommender == 'naive-regression':
 			prediction_items = self.naive_item(self.train_set, self.size[1])
@@ -146,7 +153,6 @@ class Recommender(estimator.Estimator):
 		"""
 		# Make the rating matrix
 		X = self.get_utility_matrix(array, self.size)
-		print X.shape
 		I, J = X.shape
 		# Initialize random U and M matrices
 		U = np.random.rand(I, num_factors)
@@ -172,9 +178,9 @@ class Recommender(estimator.Estimator):
 						error += (X[i][j] - np.dot(U[i, :], M[:, j])) ** 2
 						for k in xrange(num_factors):
 							error += (reg / 2) * (U[i][k] ** 2 + M[k][j] ** 2)
-			if error < 0.001:
+			if error < 0.1:
 				break
-		return np.dot(P, Q.T)
+		return np.clip(np.dot(U, M), 1, 5)
 
 	@staticmethod
 	def array_average(array, total):
@@ -202,7 +208,7 @@ class Recommender(estimator.Estimator):
 		result = np.append(
 			result,
 			np.ones(total - len(result) + 1) * np.nan)
-		return result
+		return result[1:]
 
 	@staticmethod
 	def get_utility_matrix(array, size, prediction=None):

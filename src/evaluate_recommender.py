@@ -73,7 +73,6 @@ for fold in range(folds):
 
     # Get prediction
     prediction = recommender.get_prediction()
-    print prediction
 
     # Compute the sum of the errors
     errors = np.add(
