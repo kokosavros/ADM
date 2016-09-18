@@ -1,5 +1,37 @@
 # Assignment 1 - Recommender Systems #
 
+## Assignment Structure ##
+
+README.md
+src/
+	evaluate_recommender.py
+	export.py
+	datasets/
+		README
+		movies.dat
+		ratings.dat
+		users.dat
+	classes/
+		recommender.py
+		estimator.py
+		test_recommender.py
+
+## General Info ##
+
+#### export.py ####
+File with the function to export data
+
+#### evaluate_recommender.py ####
+The main file of the assignment. It uses 5-fold cross validation to evaluate the implemented recommenders.
+
+#### recommender.py ####
+The recommender class. In initialization you define the recommender algorithm and you pass the training and the test set, as well as the size of the initial dataset. 
+
+You can get a prediction for each model, as well as estimation of the errors for the models.
+
+#### estimator.py ####
+The estimator class. It offers estimations for RMSE and MAE errors.
+
 ## Usage ##
 ```sh
 usage: evaluate_recommender.py [-h] [-e {rmse,mae}]
