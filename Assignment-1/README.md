@@ -7,8 +7,8 @@ usage: evaluate_recommender.py [-h] [-e {rmse,mae}]
 ```
 
 ## Results ##
-| Algorithm            	|        RMSE 	|        MAE   	|
-|----------------------	|-------	|-------	|-------	|-------	|
+| Algorithm            	|  RMSE 	|       	| MAE   	|       	|
+|----------------------	|:-----:	|-------	|-------	|-------	|
 |                      	| Train 	|  Test 	| Train 	|  Test 	|
 | Naive Global         	| 1.117 	| 1.117 	| 0.934 	| 0.934 	|
 | Naive User           	| 1.028 	| 1.036 	| 0.823 	| 0.829 	|
