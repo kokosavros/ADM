@@ -17,7 +17,6 @@ usage: evaluate_recommender.py [-h] [-e {rmse,mae}]
 | Matrix Factorization 	|       	|       	|       	|       	|
 
 ## Times ##
-Using cProfile
 | Algorithm            	| Time Per Call 	|
 |----------------------	|:-------------:	|
 | Naive Global         	|     0.002     	|
