@@ -1,21 +1,21 @@
 # Assignment 1 - Recommender Systems #
 
 ## Assignment Structure ##
-
+```
 README.md
 src/
-	evaluate_recommender.py
-	export.py
-	datasets/
-		README
-		movies.dat
-		ratings.dat
-		users.dat
-	classes/
-		recommender.py
-		estimator.py
-		test_recommender.py
-
+	+-- evaluate_recommender.py
+	+-- export.py
+	+-- datasets/
+		+-- README
+		+-- movies.dat
+		+-- ratings.dat
+		+-- users.dat
+	+-- classes/
+		+-- recommender.py
+		+-- estimator.py
+		+-- test_recommender.py
+```
 ## General Info ##
 
 #### export.py ####
